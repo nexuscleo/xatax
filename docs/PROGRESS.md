@@ -6,9 +6,9 @@
 
 ## Status Geral
 
-- **Fase Atual:** FASE 2 — Protótipo do Núcleo
+- **Fase Atual:** Ponto de salvamento após a conclusão da FASE 2
 - **Bloqueios Atuais:** Nenhum
-- **Próximo Marco:** Portão de Aceite da Fase 2 (Nave, inimigo, colisão, 60 FPS, teste de replay passando)
+- **Próximo Marco:** Iniciar FASE 3 — Fatia Vertical (Portão Decisivo)
 
 ---
 
@@ -29,12 +29,12 @@
 
 ## Histórico de Fases
 
-| Fase | Título                           | Status                           | Data de Conclusão |
-| ---- | -------------------------------- | -------------------------------- | ----------------- |
-| 1    | Preparação                       | Concluída e Aprovada             | 21/10/2026        |
-| 2    | Protótipo do Núcleo              | Concluída (Aguardando Aprovação) | 21/10/2026        |
-| 3    | Fatia Vertical (Portão Decisivo) | Não iniciada                     | —                 |
-| 4    | Jogo Web Completo                | Não iniciada                     | —                 |
-| 5    | Backend e Ranking                | Não iniciada                     | —                 |
-| 6    | Port Mobile                      | Não iniciada                     | —                 |
-| 7    | Polimento e Lançamento           | Não iniciada                     | —                 |
+| Fase | Título                           | Status                        | Data de Conclusão |
+| ---- | -------------------------------- | ----------------------------- | ----------------- |
+| 1    | Preparação                       | Concluída e Aprovada          | 21/10/2026        |
+| 2    | Protótipo do Núcleo              | Concluída (Salvo para Fase 3) | 21/10/2026        |
+| 3    | Fatia Vertical (Portão Decisivo) | Próxima fase                  | —                 |
+| 4    | Jogo Web Completo                | Não iniciada                  | —                 |
+| 5    | Backend e Ranking                | Não iniciada                  | —                 |
+| 6    | Port Mobile                      | Não iniciada                  | —                 |
+| 7    | Polimento e Lançamento           | Não iniciada                  | —                 |
