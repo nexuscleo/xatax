@@ -14,6 +14,9 @@
     "lint": "eslint .",
     "test": "vitest run"
   },
+  "dependencies": {
+    "@vanguarda/content": "workspace:*"
+  },
   "devDependencies": {
     "@vanguarda/config": "workspace:*",
     "eslint": "^9.21.0",

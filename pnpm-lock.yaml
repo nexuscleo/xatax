@@ -249,6 +249,10 @@ importers:
         version: 3.2.7(supports-color@7.2.0)
 
   packages/core:
+    dependencies:
+      '@vanguarda/content':
+        specifier: workspace:*
+        version: link:../content
     devDependencies:
       '@vanguarda/config':
         specifier: workspace:*

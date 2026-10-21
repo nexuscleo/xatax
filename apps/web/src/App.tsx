@@ -1,32 +1,24 @@
 import React from 'react';
-import { CORE_VERSION, STEP } from '@vanguarda/core';
+import { GameView } from './components/GameView';
 
 export const App: React.FC = () => {
   return (
-    <main style={{ textAlign: 'center', padding: '2rem' }}>
-      <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem', color: '#58a6ff' }}>
-        Olá, Vanguarda!
-      </h1>
-      <p style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>
-        Shoot 'em up horizontal em React (Web) e React Native (Mobile).
-      </p>
-      <div
-        style={{
-          marginTop: '1.5rem',
-          padding: '1rem',
-          backgroundColor: '#161b22',
-          borderRadius: '8px',
-          display: 'inline-block',
-          border: '1px solid #30363d',
-        }}
-      >
-        <p>
-          <strong>Núcleo (@vanguarda/core):</strong> v{CORE_VERSION}
+    <main
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '1.5rem',
+      }}
+    >
+      <header style={{ marginBottom: '1rem', textAlign: 'center' }}>
+        <h1 style={{ fontSize: '1.8rem', color: '#58a6ff', letterSpacing: '2px' }}>VANGUARDA</h1>
+        <p style={{ color: '#8b949e', fontSize: '0.85rem' }}>
+          Protótipo do Núcleo — Fase 2 (60 FPS Fixed Time-Step)
         </p>
-        <p>
-          <strong>Passo Fixo de Simulação:</strong> {STEP.toFixed(4)}s (60 FPS)
-        </p>
-      </div>
+      </header>
+
+      <GameView />
     </main>
   );
 };

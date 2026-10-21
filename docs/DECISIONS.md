@@ -46,3 +46,27 @@ Este arquivo documenta as decisões estruturais do projeto Vanguarda, seu contex
 - **Alternativas Consideradas:**
   - _React 19:_ Incompatível com diversas dependências estáveis atuais do Expo e React Native Skia.
 - **Motivo:** Garante estabilidade e ausência de atritos de resolução de pacotes entre web e mobile.
+
+---
+
+## ADR-005: Object Pooling com Remoção $O(1)$ por Swap-Remove
+
+- **Data:** Fase 2
+- **Contexto:** No loop de física de 60 FPS (`step`), a instanciação de objetos para tiros de jogador, tiros inimigos e partículas gera pressão contínua no Garbage Collector, causando engasgos periódicos de quadros (_frame drops_).
+- **Decisão:** Implementar a classe `EntityPool<T>` pré-alocando instâncias no início da fase e utilizando a estratégia de _swap-remove_ ($O(1)$) para desativação de entidades sem criar novos arrays ou deslocar elementos de memória.
+- **Alternativas Consideradas:**
+  - _Array.prototype.splice / filter:_ Gera realocações e deslocamento de elementos $O(N)$.
+  - _Alocação dinâmica com `new` em tempo de execução:_ Pressão no GC.
+- **Motivo:** Garante alocação zero de heap durante o `step`, mantendo a taxa de quadros estável em 60 FPS mesmo em celulares e máquinas de entrada.
+
+---
+
+## ADR-006: Compactação de Replays por Run-Length Encoding (RLE)
+
+- **Data:** Fase 2
+- **Contexto:** A gravação contínua de 60 inputs por segundo durante partidas de 3 a 5 minutos geraria arrays com 10.000 a 18.000 objetos brutos, tornando o payload de envio ao servidor excessivamente pesado.
+- **Decisão:** Adotar compactação por repetição (RLE - Run-Length Encoding), agrupando entradas sequenciais idênticas com contadores `repeat`.
+- **Alternativas Consideradas:**
+  - _Envio de array bruto de inputs:_ Payload de centenas de kilobytes.
+  - _Gzip binário no cliente:_ Complexidade extra de empacotamento antes da serialização JSON.
+- **Motivo:** O RLE reduz o tamanho do replay em até 85% sem qualquer perda de fidelidade determinística e permite decodificação trivial tanto no navegador quanto no backend Node.js.
