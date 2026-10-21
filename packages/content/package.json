@@ -12,7 +12,8 @@
     "build": "tsc -b",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "generate-paths": "node scripts/generate-paths.js"
   },
   "dependencies": {
     "zod": "^3.24.2"

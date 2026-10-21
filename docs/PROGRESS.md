@@ -6,24 +6,27 @@
 
 ## Status Geral
 
-- **Fase Atual:** Ponto de salvamento após a conclusão da FASE 2
+- **Fase Atual:** FASE 3 — Fatia Vertical (Portão Decisivo)
 - **Bloqueios Atuais:** Nenhum
-- **Próximo Marco:** Iniciar FASE 3 — Fatia Vertical (Portão Decisivo)
+- **Próximo Marco:** Portão de Aceite da Fase 3 (Mundo 1 completo, 8 inimigos, chefe de 2 fases, armas/cápsulas, áudio web, HUD/pausa/vitória, testes cobrindo regras e playtests)
 
 ---
 
-## Checklist da Fase 2: Protótipo do Núcleo
+## Checklist da Fase 3: Fatia Vertical
 
-- [x] Definir os contratos da seção 5.4 (`Input`, `Renderer`, `AudioPlayer`) e `World` tipado
-- [x] Implementar PRNG com semente (`mulberry32`), `world.tick`, `STEP` e ordem de `step`
-- [x] Nave do jogador: movimento, limites de tela (480x270), tiro principal nível 1, vidas e invencibilidade
-- [x] Drone reto, seus disparos e sistema de colisão por círculos
-- [x] Pools de objetos para tiros, inimigos e partículas (sem alocação no loop quente)
-- [x] Rolagem de cenário com blocos sólidos e colisão com a nave
-- [x] `CanvasRenderer` na web (retângulos), loop de tempo fixo interpolado, entrada de teclado e gamepad
-- [x] Gravação e reprodução de replay determinístico (RLE) e verificação com `CORE_VERSION`
-- [x] Testes automatizados: colisão, pools, determinismo idêntico e teste de replay dourado
-- [x] Validar portão da Fase 2
+- [ ] Gerar tabela de trajetórias pré-calculadas (`packages/content/src/paths.json`)
+- [ ] Implementar os 8 tipos de inimigos (reto, ondulante, zigue-zague, atirador, kamikaze, esquadrão, torreta, mina)
+- [ ] Implementar sistema completo de armas (níveis 1 a 3, míssil diagonal) e todas as cápsulas de power-up com letras indicativas
+- [ ] Implementar mecânica de Bomba (limpeza de tiros na tela e dano em área) e sistema de combo aprimorado
+- [ ] Implementar torretas de cenário e passagens estreitas no mapa de tiles
+- [ ] Definir schema Zod `LevelData` e construir o Mundo 1 completo em dados (`packages/content/src/levels/world1.json`)
+- [ ] Implementar o Chefe do Mundo 1 com 2 fases de ataque, padrões e barra de vida
+- [ ] Integrar Web Audio API procedural na aplicação web consumindo `world.events`
+- [ ] Atualizar HUD (barra de chefe, bombas, escudo, armas) e implementar telas de Pausa e World Clear
+- [ ] Atualizar `balance.ts` com todos os parâmetros balanceados
+- [ ] Criar testes unitários para todas as novas regras (danos, drops, armas, chefe, combo, replay)
+- [ ] Elaborar `docs/PLAYTEST.md` com protocolo e resultados de playtest
+- [ ] Validar critérios de aceite do Portão da Fase 3
 
 ---
 
@@ -32,8 +35,8 @@
 | Fase | Título                           | Status                        | Data de Conclusão |
 | ---- | -------------------------------- | ----------------------------- | ----------------- |
 | 1    | Preparação                       | Concluída e Aprovada          | 21/10/2026        |
-| 2    | Protótipo do Núcleo              | Concluída (Salvo para Fase 3) | 21/10/2026        |
-| 3    | Fatia Vertical (Portão Decisivo) | Próxima fase                  | —                 |
+| 2    | Protótipo do Núcleo              | Concluída e Aprovada          | 21/10/2026        |
+| 3    | Fatia Vertical (Portão Decisivo) | Em Execução                   | —                 |
 | 4    | Jogo Web Completo                | Não iniciada                  | —                 |
 | 5    | Backend e Ranking                | Não iniciada                  | —                 |
 | 6    | Port Mobile                      | Não iniciada                  | —                 |
