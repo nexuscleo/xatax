@@ -48,3 +48,4 @@ export const LevelDataSchema = z.object({
   difficulty: DifficultySchema.optional(),
 });
 export type LevelData = z.infer<typeof LevelDataSchema>;
+

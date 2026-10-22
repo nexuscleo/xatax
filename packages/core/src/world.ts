@@ -1,4 +1,4 @@
-import type { Difficulty, EnemyType } from '@vanguarda/content';
+import type { CapsuleType, Difficulty, EnemyType } from '@vanguarda/content';
 import { balance } from '@vanguarda/content';
 import { EntityPool } from './pools';
 import { createRng } from './random';
@@ -13,12 +13,16 @@ export interface PlayerEntity {
   radius: number;
   lives: number;
   weaponLevel: number;
+  hasMissile: boolean;
   shield: number;
   bombs: number;
+  speedStackCount: number;
   speedMultiplier: number;
   invincibleTicks: number;
   fireCooldown: number;
   isDead: boolean;
+  /** Acumula ticks sem levar dano (para bônus de mundo sem dano) */
+  ticksWithoutDamage: number;
 }
 
 export interface ShotEntity {
@@ -38,6 +42,8 @@ export interface EnemyEntity {
   type: EnemyType;
   x: number;
   y: number;
+  /** Y de spawn, usado para cálculo de trajetória relativa */
+  spawnY: number;
   prevX: number;
   prevY: number;
   vx: number;
@@ -46,6 +52,39 @@ export interface EnemyEntity {
   hp: number;
   fireCooldown: number;
   scoreValue: number;
+  /** Índice no array de trajetória pré-calculada */
+  pathTick: number;
+  /** Ângulo atual de movimento (para kamikaze) em radianos * 1000 (inteiro) */
+  angleMilliRad: number;
+  /** X onde o inimigo para de se mover (shooter) */
+  entryX: number;
+  /** Indica que o inimigo chegou à posição de combate */
+  entryComplete: boolean;
+  /** Tipo de cápsula que dropa ao morrer; -1 = nenhuma */
+  dropCapsule: CapsuleType | null;
+}
+
+export interface CapsuleEntity {
+  x: number;
+  y: number;
+  prevX: number;
+  prevY: number;
+  radius: number;
+  capsuleType: CapsuleType;
+}
+
+export interface BossEntity {
+  x: number;
+  y: number;
+  prevX: number;
+  prevY: number;
+  radius: number;
+  hp: number;
+  maxHp: number;
+  phase: 1 | 2;
+  attackTick: number;
+  scoreValue: number;
+  isDead: boolean;
 }
 
 export interface ParticleEntity {
@@ -59,7 +98,14 @@ export interface ParticleEntity {
   size: number;
 }
 
-export type GameEventType = 'shot' | 'explosion' | 'playerHit' | 'powerup' | 'bossHit' | 'bomb';
+export type GameEventType =
+  | 'shot'
+  | 'explosion'
+  | 'playerHit'
+  | 'powerup'
+  | 'bossHit'
+  | 'bomb'
+  | 'worldClear';
 
 export interface GameEvent {
   type: GameEventType;
@@ -76,15 +122,19 @@ export interface World {
   state: 'playing' | 'worldClear' | 'gameover';
   score: number;
   combo: number;
+  /** Índice da próxima onda a verificar para spawn */
+  waveIndex: number;
   scrollX: number;
   player: PlayerEntity;
   playerShots: EntityPool<ShotEntity>;
   enemyShots: EntityPool<ShotEntity>;
   enemies: EntityPool<EnemyEntity>;
+  capsules: EntityPool<CapsuleEntity>;
   particles: EntityPool<ParticleEntity>;
+  boss: BossEntity | null;
   events: GameEvent[];
   /**
-   * Terrain map represented as an array of rows, where 1 is solid tile, 0 is empty.
+   * Mapa de terreno: array de linhas, onde 1 = bloco sólido, 0 = vazio.
    */
   terrain: number[][];
   terrainWidthTiles: number;
@@ -92,7 +142,7 @@ export interface World {
 }
 
 /**
- * Creates the initial game world state.
+ * Cria o estado inicial do mundo do jogo.
  */
 export function createWorld(
   seed: number,
@@ -102,19 +152,19 @@ export function createWorld(
   const rng = createRng(seed);
   const initialLives = balance.player.initialLives[difficulty];
 
-  // Initialize terrain rows: 270 / 16 = ~17 rows
+  // Inicializa o terreno: 270 / 16 ≈ 17 linhas
   const rows = Math.ceil(balance.world.logicalHeight / balance.world.tileSize);
-  const cols = 200; // 200 tiles width for prototype corridor
+  const cols = 200; // 200 tiles de largura para o corredor protótipo
   const terrain: number[][] = [];
 
   for (let r = 0; r < rows; r++) {
     const row = new Array<number>(cols).fill(0);
-    // Add border ceiling and floor blocks with some obstacles
+    // Teto e chão sólidos, com alguns obstáculos internos
     for (let c = 0; c < cols; c++) {
       if (r === 0 || r === rows - 1) {
-        row[c] = 1; // ceiling and floor
+        row[c] = 1; // teto e chão
       } else if ((c === 30 || c === 70 || c === 120) && (r < 4 || r > rows - 5)) {
-        row[c] = 1; // narrow passage blocks
+        row[c] = 1; // blocos de passagem estreita
       }
     }
     terrain.push(row);
@@ -130,12 +180,15 @@ export function createWorld(
     radius: balance.player.hitboxRadius,
     lives: initialLives,
     weaponLevel: 1,
+    hasMissile: false,
     shield: 0,
-    bombs: 1,
+    bombs: balance.player.bombCount,
+    speedStackCount: 0,
     speedMultiplier: 1.0,
     invincibleTicks: balance.player.invincibilityTicks,
     fireCooldown: 0,
     isDead: false,
+    ticksWithoutDamage: 0,
   };
 
   const playerShots = new EntityPool<ShotEntity>(balance.pools.maxPlayerShots, () => ({
@@ -167,6 +220,7 @@ export function createWorld(
     type: 'straight_drone',
     x: 0,
     y: 0,
+    spawnY: 0,
     prevX: 0,
     prevY: 0,
     vx: 0,
@@ -175,6 +229,20 @@ export function createWorld(
     hp: balance.enemy.straightDrone.hp,
     fireCooldown: 0,
     scoreValue: balance.enemy.straightDrone.scoreValue,
+    pathTick: 0,
+    angleMilliRad: 0,
+    entryX: 0,
+    entryComplete: false,
+    dropCapsule: null,
+  }));
+
+  const capsules = new EntityPool<CapsuleEntity>(balance.pools.maxCapsules, () => ({
+    x: 0,
+    y: 0,
+    prevX: 0,
+    prevY: 0,
+    radius: balance.capsule.hitboxRadius,
+    capsuleType: 'weapon',
   }));
 
   const particles = new EntityPool<ParticleEntity>(balance.pools.maxParticles, () => ({
@@ -197,12 +265,15 @@ export function createWorld(
     state: 'playing',
     score: 0,
     combo: 0,
+    waveIndex: 0,
     scrollX: 0,
     player,
     playerShots,
     enemyShots,
     enemies,
+    capsules,
     particles,
+    boss: null,
     events: [],
     terrain,
     terrainWidthTiles: cols,
