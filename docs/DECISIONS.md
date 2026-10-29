@@ -70,3 +70,43 @@ Este arquivo documenta as decisões estruturais do projeto Vanguarda, seu contex
   - _Envio de array bruto de inputs:_ Payload de centenas de kilobytes.
   - _Gzip binário no cliente:_ Complexidade extra de empacotamento antes da serialização JSON.
 - **Motivo:** O RLE reduz o tamanho do replay em até 85% sem qualquer perda de fidelidade determinística e permite decodificação trivial tanto no navegador quanto no backend Node.js.
+
+---
+
+## ADR-007: Conteúdo de Mundo 1 com Duração Alvo e Áudio Procedural
+
+- **Data:** Fase 3
+- **Contexto:** O primeiro cronograma do Mundo 1 iniciava o chefe em 45 segundos, embora o GDD estime de 3 a 4 minutos por mundo. A fatia vertical também precisa de áudio provisório sem adicionar arquivos de origem ou dependências.
+- **Decisão:** Agendar o chefe no tick 10.800 (180 segundos), distribuir as ondas até o tick 10.200 e ampliar o terreno para cobrir a rolagem da fase. Os efeitos e a faixa provisória são sintetizados na Web Audio API após a primeira interação e os créditos registram sua autoria.
+- **Alternativas Consideradas:** Manter a duração de 45 segundos ou adicionar arquivos de áudio de terceiros.
+- **Motivo:** O conteúdo passa a refletir a duração prevista pelo GDD e mantém placeholders originais, sem risco de licença ou custo de dependências adicionais.
+
+---
+
+## ADR-008: Registro Persistente de Dano na Partida
+
+- **Data:** Fase 3
+- **Contexto:** Usar apenas `ticksWithoutDamage` para decidir o bônus de conclusão permite que uma pessoa que sofreu dano no início da fase receba o bônus após sobreviver por tempo suficiente.
+- **Decisão:** Registrar `hasTakenDamage` no estado do jogador e conceder o bônus de conclusão sem dano somente se permanecer falso durante a partida.
+- **Alternativas Consideradas:** Comparar o tempo desde o último dano com a duração total ou inferir o dano a partir do combo.
+- **Motivo:** Um sinal persistente representa diretamente a regra e não depende da distância temporal entre o dano e o chefe.
+
+---
+
+## ADR-009: Protótipo de Mundo 2 em Dados
+
+- **Data:** 28/10/2026
+- **Contexto:** O projeto alcançou a base da fatia vertical do Mundo 1 e agora precisa continuar a progressão do jogo. A próxima etapa exige um nível adicional com layout, ondas e boss próprios, mantendo a arquitetura de conteúdo em JSON validado, sem acoplar regras de gameplay ao código do app.
+- **Decisão:** Definir o Mundo 2 como um protótipo em dados, com terreno, ondas, boss de reagor e música temática específica, mantendo a sessão em `packages/content/src/levels/world2.json` e o carregador em `packages/content/src/level-data.ts`.
+- **Alternativas Consideradas:** Inserir o novo nível diretamente em código TypeScript ou pular para a UI sem conteúdo de fase.
+- **Motivo:** O modelo de dados validado pelo Zod reduz riscos de regressão, acelera a iteração de balanceamento e já está alinhado ao fluxo usado no Mundo 1.
+
+---
+
+## ADR-010: Backend de Ranking Validado por Replay
+
+- **Data:** 28/10/2026
+- **Contexto:** O projeto precisa de um sistema de ranking online confiável, mas o ambiente web e mobile não pode enviar nem confiar em pontuações declaradas pelo cliente. A fraude mais simples seria alterar a pontuação local e mandar um valor maior ao servidor.
+- **Decisão:** Implementar um serviço Fastify em `apps/server` que autentica jogadores anônimos, recebe replays compactados e reexecuta a partida headless com `@vanguarda/core` para verificar se a pontuação declarada corresponde ao resultado verdadeiro. O servidor aceita apenas replays compatíveis com `CORE_VERSION`, toda entrada é validada com Zod e a resposta final usa o resultado verificado do replay.
+- **Alternativas Consideradas:** Confiar na pontuação enviada pelo cliente e validar só o formato de payload; guardar lista em localStorage no navegador; aceitar qualquer código de pontuação sem validação.
+- **Motivo:** A segurança do ranking exige que o servidor reeexecute o mesmo algoritmo determinístico do jogo; só assim o ranking passa a refletir o resultado real da partida e não um valor modificado manualmente.

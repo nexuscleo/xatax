@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { stdout } from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -44,5 +45,4 @@ const paths = {
 
 const outputPath = path.resolve(__dirname, '../src/paths.json');
 fs.writeFileSync(outputPath, JSON.stringify(paths, null, 2), 'utf-8');
-console.log(`Generated paths.json with ${Object.keys(paths).length} trajectory tables.`);
-
+stdout.write(`Generated paths.json with ${Object.keys(paths).length} trajectory tables.\n`);

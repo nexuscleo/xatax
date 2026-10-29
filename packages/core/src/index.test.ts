@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BUTTON_BOMB,
   BUTTON_FIRE,
   CORE_VERSION,
   EntityPool,
@@ -13,6 +14,8 @@ import {
   decompressInputs,
   runReplay,
   step,
+  UiStore,
+  playGameEvents,
 } from './index';
 
 describe('Collision System', () => {
@@ -119,16 +122,14 @@ describe('Replay System', () => {
   it('golden replay test: reproduces identical score and state', () => {
     const seed = 4242;
     const inputs = [
-      { moveX: 0, moveY: 0, buttons: BUTTON_FIRE, repeat: 100 },
-      { moveX: 127, moveY: 0, buttons: BUTTON_FIRE, repeat: 50 },
-      { moveX: -60, moveY: 60, buttons: BUTTON_FIRE, repeat: 50 },
-      { moveX: 0, moveY: -60, buttons: BUTTON_FIRE, repeat: 100 },
+      { moveX: 0, moveY: -127, buttons: BUTTON_FIRE, repeat: 32 },
+      { moveX: 0, moveY: 0, buttons: BUTTON_FIRE, repeat: 268 },
     ];
 
     const replayData = {
       coreVersion: CORE_VERSION,
       seed,
-      levelId: 'proto-level-1',
+      levelId: 'world-1',
       difficulty: 'normal' as const,
       inputs,
     };
@@ -140,5 +141,137 @@ describe('Replay System', () => {
     expect(result1.finalTick).toBe(result2.finalTick);
     expect(result1.finalState).toBe('playing');
     expect(result1.finalScore).toBeGreaterThan(0); // Scored points destroying drones
+  });
+});
+
+describe('Level data integration', () => {
+  it('spawns the configured first wave at its scheduled tick', () => {
+    const world = createWorld(321);
+    for (let tick = 0; tick < 60; tick++) {
+      step(world, createEmptyInput());
+    }
+
+    expect(world.enemies.activeCount).toBe(3);
+    for (let i = 0; i < world.enemies.activeCount; i++) {
+      const enemy = world.enemies.items[i]!;
+      expect(enemy.type).toBe('straight_drone');
+      expect(enemy.y).toBe(60);
+    }
+  });
+
+  it('applies configured wave spacing and capsule drops', () => {
+    const world = createWorld(987);
+    world.tick = world.levelData.waves[3]!.tick - 1;
+    world.waveIndex = 3;
+
+    step(world, createEmptyInput());
+
+    expect(world.enemies.activeCount).toBe(5);
+    for (let i = 0; i < world.enemies.activeCount; i++) {
+      expect(world.enemies.items[i]?.dropCapsule).toBe('weapon');
+    }
+    expect(world.enemies.items[1]!.x - world.enemies.items[0]!.x).toBeCloseTo(25, 10);
+  });
+
+  it('spawns the boss at the level-defined tick', () => {
+    const world = createWorld(654);
+    world.tick = world.levelData.boss.tick - 1;
+    world.waveIndex = world.levelData.waves.length;
+
+    step(world, createEmptyInput());
+
+    expect(world.boss).not.toBeNull();
+    expect(world.boss?.hp).toBe(world.boss?.maxHp);
+  });
+
+  it('rejects unknown level identifiers instead of using a fallback', () => {
+    expect(() => createWorld(1, 'missing-world')).toThrow('Unknown level id "missing-world"');
+  });
+});
+
+describe('UI store', () => {
+  it('reflects boss health and preserves pause until the world ends', () => {
+    const world = createWorld(123);
+    world.boss = {
+      x: 400,
+      y: 135,
+      prevX: 400,
+      prevY: 135,
+      radius: 30,
+      hp: 40,
+      maxHp: 80,
+      phase: 2,
+      attackTick: 0,
+      scoreValue: 5000,
+      isDead: false,
+    };
+
+    const store = new UiStore('playing');
+    store.update(world);
+    expect(store.getSnapshot().bossHp).toBe(40);
+    expect(store.getSnapshot().bossMaxHp).toBe(80);
+
+    store.setState('paused');
+    store.update(world, 'paused');
+    expect(store.getSnapshot().state).toBe('paused');
+
+    world.state = 'worldClear';
+    store.update(world, 'paused');
+    expect(store.getSnapshot().state).toBe('worldClear');
+    expect(store.getSnapshot().bossHp).toBe(40);
+  });
+});
+
+describe('Bomb input', () => {
+  it('uses one bomb per press instead of repeating while held', () => {
+    const world = createWorld(456);
+    const bombInput = { moveX: 0, moveY: 0, buttons: BUTTON_BOMB };
+
+    step(world, bombInput);
+    step(world, bombInput);
+
+    expect(world.player.bombs).toBe(2);
+    expect(world.events.filter((event) => event.type === 'bomb')).toHaveLength(0);
+
+    step(world, createEmptyInput());
+    step(world, bombInput);
+
+    expect(world.player.bombs).toBe(1);
+    expect(world.events.filter((event) => event.type === 'bomb')).toHaveLength(1);
+  });
+});
+
+describe('Audio event bridge', () => {
+  it('maps all core events to platform-independent sound identifiers', () => {
+    const played: string[] = [];
+    playGameEvents(
+      [
+        { type: 'shot' },
+        { type: 'explosion' },
+        { type: 'playerHit' },
+        { type: 'powerup' },
+        { type: 'bossHit' },
+        { type: 'bomb' },
+        { type: 'extraLife' },
+        { type: 'worldClear' },
+      ],
+      {
+        playSfx: (id) => played.push(id),
+        playMusic: () => undefined,
+        stopMusic: () => undefined,
+        setVolume: () => undefined,
+      },
+    );
+
+    expect(played).toEqual([
+      'shot',
+      'explosion',
+      'damage',
+      'powerup',
+      'boss-hit',
+      'bomb',
+      'extra-life',
+      'victory',
+    ]);
   });
 });

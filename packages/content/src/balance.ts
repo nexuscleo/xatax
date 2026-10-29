@@ -1,9 +1,27 @@
 export interface BalanceConfig {
+  difficulty: {
+    easy: {
+      enemyHpMultiplier: number;
+      enemySpeedMultiplier: number;
+      enemyShotSpeedMultiplier: number;
+    };
+    normal: {
+      enemyHpMultiplier: number;
+      enemySpeedMultiplier: number;
+      enemyShotSpeedMultiplier: number;
+    };
+    hard: {
+      enemyHpMultiplier: number;
+      enemySpeedMultiplier: number;
+      enemyShotSpeedMultiplier: number;
+    };
+  };
   world: {
     logicalWidth: number;
     logicalHeight: number;
     tileSize: number;
     defaultScrollSpeed: number;
+    offscreenMargin: number;
   };
   player: {
     hitboxRadius: number;
@@ -20,6 +38,12 @@ export interface BalanceConfig {
     shotDamage: number;
     extraLifeScoreInterval: number;
     bombCount: number;
+    maxBombs: number;
+    maxWeaponLevel: number;
+    maxShields: number;
+    bombEnemyDamage: number;
+    bombBossDamage: number;
+    shieldHitInvincibilityTicks: number;
     maxSpeedStacks: number;
     speedBonusPerStack: number;
   };
@@ -31,6 +55,7 @@ export interface BalanceConfig {
   capsule: {
     driftSpeed: number;
     hitboxRadius: number;
+    pickupRadiusBonus: number;
   };
   enemy: {
     straightDrone: {
@@ -48,6 +73,7 @@ export interface BalanceConfig {
       hitboxRadius: number;
       scoreValue: number;
       pathAmplitude: number;
+      pathValueScale: number;
     };
     zigzagDrone: {
       hp: number;
@@ -56,6 +82,7 @@ export interface BalanceConfig {
       scoreValue: number;
       stepTicks: number;
       stepSize: number;
+      pathValueScale: number;
     };
     shooter: {
       hp: number;
@@ -79,6 +106,8 @@ export interface BalanceConfig {
       speed: number;
       hitboxRadius: number;
       scoreValue: number;
+      pathAmplitude: number;
+      pathValueScale: number;
     };
     turret: {
       hp: number;
@@ -106,6 +135,53 @@ export interface BalanceConfig {
       phase2ShotSpeed: number;
       phase2FireIntervalTicks: number;
       phase2HpThreshold: number;
+      phase2ProjectileCount: number;
+      phase1SpreadMilliRadians: readonly number[];
+      spawnInset: number;
+      movementAmplitude: number;
+      movementPathScale: number;
+      phase3ShotSpeed?: number;
+      phase3FireIntervalTicks?: number;
+      phase3HpThreshold?: number;
+      phase3ProjectileCount?: number;
+    };
+    reactorSentinel: {
+      hp: number;
+      hitboxRadius: number;
+      scoreValue: number;
+      phase1ShotSpeed: number;
+      phase1FireIntervalTicks: number;
+      phase2ShotSpeed: number;
+      phase2FireIntervalTicks: number;
+      phase2HpThreshold: number;
+      phase2ProjectileCount: number;
+      phase1SpreadMilliRadians: readonly number[];
+      spawnInset: number;
+      movementAmplitude: number;
+      movementPathScale: number;
+      phase3ShotSpeed?: number;
+      phase3FireIntervalTicks?: number;
+      phase3HpThreshold?: number;
+      phase3ProjectileCount?: number;
+    };
+    aiCore: {
+      hp: number;
+      hitboxRadius: number;
+      scoreValue: number;
+      phase1ShotSpeed: number;
+      phase1FireIntervalTicks: number;
+      phase2ShotSpeed: number;
+      phase2FireIntervalTicks: number;
+      phase2HpThreshold: number;
+      phase2ProjectileCount: number;
+      phase1SpreadMilliRadians: readonly number[];
+      spawnInset: number;
+      movementAmplitude: number;
+      movementPathScale: number;
+      phase3ShotSpeed?: number;
+      phase3FireIntervalTicks?: number;
+      phase3HpThreshold?: number;
+      phase3ProjectileCount?: number;
     };
   };
   scoring: {
@@ -125,11 +201,29 @@ export interface BalanceConfig {
 }
 
 export const balance: BalanceConfig = {
+  difficulty: {
+    easy: {
+      enemyHpMultiplier: 0.75,
+      enemySpeedMultiplier: 0.85,
+      enemyShotSpeedMultiplier: 0.8,
+    },
+    normal: {
+      enemyHpMultiplier: 1,
+      enemySpeedMultiplier: 1,
+      enemyShotSpeedMultiplier: 1,
+    },
+    hard: {
+      enemyHpMultiplier: 1.25,
+      enemySpeedMultiplier: 1.15,
+      enemyShotSpeedMultiplier: 1.2,
+    },
+  },
   world: {
     logicalWidth: 480,
     logicalHeight: 270,
     tileSize: 16,
     defaultScrollSpeed: 40,
+    offscreenMargin: 20,
   },
   player: {
     hitboxRadius: 5,
@@ -146,6 +240,12 @@ export const balance: BalanceConfig = {
     shotDamage: 1,
     extraLifeScoreInterval: 50000,
     bombCount: 3,
+    maxBombs: 3,
+    maxWeaponLevel: 3,
+    maxShields: 1,
+    bombEnemyDamage: 3,
+    bombBossDamage: 5,
+    shieldHitInvincibilityTicks: 60,
     maxSpeedStacks: 3,
     speedBonusPerStack: 0.1,
   },
@@ -157,6 +257,7 @@ export const balance: BalanceConfig = {
   capsule: {
     driftSpeed: 20, // pixels per second leftward
     hitboxRadius: 8,
+    pickupRadiusBonus: 5,
   },
   enemy: {
     straightDrone: {
@@ -174,6 +275,7 @@ export const balance: BalanceConfig = {
       hitboxRadius: 8,
       scoreValue: 120,
       pathAmplitude: 32,
+      pathValueScale: 32,
     },
     zigzagDrone: {
       hp: 2,
@@ -182,6 +284,7 @@ export const balance: BalanceConfig = {
       scoreValue: 150,
       stepTicks: 30,
       stepSize: 32,
+      pathValueScale: 32,
     },
     shooter: {
       hp: 3,
@@ -205,6 +308,8 @@ export const balance: BalanceConfig = {
       speed: 85,
       hitboxRadius: 7,
       scoreValue: 80,
+      pathAmplitude: 40,
+      pathValueScale: 48,
     },
     turret: {
       hp: 4,
@@ -231,7 +336,50 @@ export const balance: BalanceConfig = {
       phase1FireIntervalTicks: 60,
       phase2ShotSpeed: 160,
       phase2FireIntervalTicks: 40,
-      phase2HpThreshold: 40, // switches phase at half HP
+      phase2HpThreshold: 40,
+      phase2ProjectileCount: 8,
+      phase1SpreadMilliRadians: [-1256, -628, 0, 628, 1256],
+      spawnInset: 40,
+      movementAmplitude: 60,
+      movementPathScale: 32,
+    },
+    reactorSentinel: {
+      hp: 110,
+      hitboxRadius: 32,
+      scoreValue: 6500,
+      phase1ShotSpeed: 145,
+      phase1FireIntervalTicks: 54,
+      phase2ShotSpeed: 175,
+      phase2FireIntervalTicks: 34,
+      phase2HpThreshold: 70,
+      phase2ProjectileCount: 10,
+      phase1SpreadMilliRadians: [-1571, -942, -314, 314, 942, 1571],
+      spawnInset: 46,
+      movementAmplitude: 72,
+      movementPathScale: 30,
+      phase3ShotSpeed: 210,
+      phase3FireIntervalTicks: 26,
+      phase3HpThreshold: 30,
+      phase3ProjectileCount: 14,
+    },
+    aiCore: {
+      hp: 140,
+      hitboxRadius: 36,
+      scoreValue: 9000,
+      phase1ShotSpeed: 160,
+      phase1FireIntervalTicks: 48,
+      phase2ShotSpeed: 190,
+      phase2FireIntervalTicks: 28,
+      phase2HpThreshold: 90,
+      phase2ProjectileCount: 12,
+      phase1SpreadMilliRadians: [-1885, -1256, -628, 0, 628, 1256, 1885],
+      spawnInset: 52,
+      movementAmplitude: 80,
+      movementPathScale: 28,
+      phase3ShotSpeed: 230,
+      phase3FireIntervalTicks: 20,
+      phase3HpThreshold: 40,
+      phase3ProjectileCount: 16,
     },
   },
   scoring: {

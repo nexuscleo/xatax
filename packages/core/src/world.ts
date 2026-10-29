@@ -1,5 +1,5 @@
-import type { CapsuleType, Difficulty, EnemyType } from '@vanguarda/content';
-import { balance } from '@vanguarda/content';
+import type { CapsuleType, Difficulty, EnemyType, LevelData, PathId } from '@vanguarda/content';
+import { balance, levels } from '@vanguarda/content';
 import { EntityPool } from './pools';
 import { createRng } from './random';
 
@@ -21,6 +21,7 @@ export interface PlayerEntity {
   invincibleTicks: number;
   fireCooldown: number;
   isDead: boolean;
+  hasTakenDamage: boolean;
   /** Acumula ticks sem levar dano (para bônus de mundo sem dano) */
   ticksWithoutDamage: number;
 }
@@ -54,6 +55,7 @@ export interface EnemyEntity {
   scoreValue: number;
   /** Índice no array de trajetória pré-calculada */
   pathTick: number;
+  pathId: PathId;
   /** Ângulo atual de movimento (para kamikaze) em radianos * 1000 (inteiro) */
   angleMilliRad: number;
   /** X onde o inimigo para de se mover (shooter) */
@@ -81,7 +83,7 @@ export interface BossEntity {
   radius: number;
   hp: number;
   maxHp: number;
-  phase: 1 | 2;
+  phase: 1 | 2 | 3;
   attackTick: number;
   scoreValue: number;
   isDead: boolean;
@@ -99,13 +101,7 @@ export interface ParticleEntity {
 }
 
 export type GameEventType =
-  | 'shot'
-  | 'explosion'
-  | 'playerHit'
-  | 'powerup'
-  | 'bossHit'
-  | 'bomb'
-  | 'worldClear';
+  'shot' | 'explosion' | 'playerHit' | 'powerup' | 'bossHit' | 'bomb' | 'extraLife' | 'worldClear';
 
 export interface GameEvent {
   type: GameEventType;
@@ -119,9 +115,13 @@ export interface World {
   rng: () => number;
   difficulty: Difficulty;
   levelId: string;
+  levelData: LevelData;
+  previousButtons: number;
   state: 'playing' | 'worldClear' | 'gameover';
   score: number;
   combo: number;
+  capsulesCollected: number;
+  nextExtraLifeScore: number;
   /** Índice da próxima onda a verificar para spawn */
   waveIndex: number;
   scrollX: number;
@@ -146,26 +146,30 @@ export interface World {
  */
 export function createWorld(
   seed: number,
-  levelId = 'prototype-world-1',
+  levelId = 'world-1',
   difficulty: Difficulty = 'normal',
 ): World {
+  const levelData = levels[levelId];
+  if (!levelData) {
+    throw new Error(`Unknown level id "${levelId}"`);
+  }
+
   const rng = createRng(seed);
   const initialLives = balance.player.initialLives[difficulty];
 
-  // Inicializa o terreno: 270 / 16 ≈ 17 linhas
-  const rows = Math.ceil(balance.world.logicalHeight / balance.world.tileSize);
-  const cols = 200; // 200 tiles de largura para o corredor protótipo
-  const terrain: number[][] = [];
-
+  const rows = levelData.terrain.length;
+  let cols = 0;
   for (let r = 0; r < rows; r++) {
+    const sourceRow = levelData.terrain[r]!;
+    if (sourceRow.length > cols) cols = sourceRow.length;
+  }
+
+  const terrain: number[][] = [];
+  for (let r = 0; r < rows; r++) {
+    const sourceRow = levelData.terrain[r]!;
     const row = new Array<number>(cols).fill(0);
-    // Teto e chão sólidos, com alguns obstáculos internos
-    for (let c = 0; c < cols; c++) {
-      if (r === 0 || r === rows - 1) {
-        row[c] = 1; // teto e chão
-      } else if ((c === 30 || c === 70 || c === 120) && (r < 4 || r > rows - 5)) {
-        row[c] = 1; // blocos de passagem estreita
-      }
+    for (let c = 0; c < sourceRow.length; c++) {
+      row[c] = sourceRow[c] === '#' ? 1 : 0;
     }
     terrain.push(row);
   }
@@ -188,6 +192,7 @@ export function createWorld(
     invincibleTicks: balance.player.invincibilityTicks,
     fireCooldown: 0,
     isDead: false,
+    hasTakenDamage: false,
     ticksWithoutDamage: 0,
   };
 
@@ -230,6 +235,7 @@ export function createWorld(
     fireCooldown: 0,
     scoreValue: balance.enemy.straightDrone.scoreValue,
     pathTick: 0,
+    pathId: 'sine_wave',
     angleMilliRad: 0,
     entryX: 0,
     entryComplete: false,
@@ -261,10 +267,14 @@ export function createWorld(
     seed,
     rng,
     difficulty,
-    levelId,
+    levelId: levelData.id,
+    levelData,
+    previousButtons: 0,
     state: 'playing',
     score: 0,
     combo: 0,
+    capsulesCollected: 0,
+    nextExtraLifeScore: balance.player.extraLifeScoreInterval,
     waveIndex: 0,
     scrollX: 0,
     player,

@@ -24,11 +24,12 @@ _Nenhum asset gráfico de terceiros foi introduzido até o momento. Nas fases in
 
 ## 3. Efeitos Sonoros e Música
 
-_Nenhum arquivo de áudio foi introduzido até o momento._
+Os efeitos e a faixa provisória do Mundo 1 são sintetizados em tempo de execução pela Web Audio API. Não há arquivos de áudio de terceiros no projeto.
 
-| Asset ID | Descrição | Origem / Autor | Licença | URL / Referência |
-| -------- | --------- | -------------- | ------- | ---------------- |
-| —        | —         | —              | —       | —                |
+| Asset ID        | Descrição                               | Origem / Autor              | Licença | URL / Referência                       |
+| --------------- | --------------------------------------- | --------------------------- | ------- | -------------------------------------- |
+| Efeitos do jogo | Osciladores e envelopes procedurais     | Equipe do Projeto Vanguarda | MIT     | `apps/web/src/audio/WebAudioPlayer.ts` |
+| `world1-theme`  | Sequência musical procedural provisória | Equipe do Projeto Vanguarda | MIT     | `apps/web/src/audio/WebAudioPlayer.ts` |
 
 ---
 

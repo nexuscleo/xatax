@@ -42,3 +42,6 @@ Desktop.ini
 graphify-out/
 .gemini/
 
+# Local runtime data
+apps/server/data/
+

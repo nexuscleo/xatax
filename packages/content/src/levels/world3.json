@@ -1,0 +1,206 @@
+{
+  "id": "world-3",
+  "scrollSpeed": 62,
+  "tileSize": 16,
+  "terrain": [
+    "################################################################",
+    "#..............................................................#",
+    "#..............................................................#",
+    "#..............................................................#",
+    "#..............................................................#",
+    "#..............................................................#",
+    "#..............................................................#",
+    "#..............................................................#",
+    "#..............................................................#",
+    "#..............................................................#",
+    "#..............................................................#",
+    "#..............................................................#",
+    "#..............................................................#",
+    "#..............................................................#",
+    "#..............................................................#",
+    "################################################################"
+  ],
+  "waves": [
+    {
+      "tick": 180,
+      "enemy": "straight_drone",
+      "y": 48,
+      "drop": "weapon"
+    },
+    {
+      "tick": 420,
+      "enemy": "wave_drone",
+      "y": 88,
+      "path": "sine_wave",
+      "drop": "points"
+    },
+    {
+      "tick": 760,
+      "enemy": "zigzag_drone",
+      "y": 136,
+      "path": "zigzag",
+      "drop": "speed"
+    },
+    {
+      "tick": 1060,
+      "enemy": "shooter",
+      "y": 120,
+      "drop": "shield"
+    },
+    {
+      "tick": 1380,
+      "enemy": "squadron",
+      "y": 94,
+      "path": "squadron_arc",
+      "count": 5,
+      "spacing": 18,
+      "drop": "bomb"
+    },
+    {
+      "tick": 1700,
+      "enemy": "kamikaze",
+      "y": 164,
+      "drop": null
+    },
+    {
+      "tick": 2020,
+      "enemy": "mine",
+      "y": 108,
+      "drop": "missile"
+    },
+    {
+      "tick": 2340,
+      "enemy": "straight_drone",
+      "y": 72,
+      "drop": "points"
+    },
+    {
+      "tick": 2660,
+      "enemy": "wave_drone",
+      "y": 172,
+      "path": "sine_wave",
+      "drop": "weapon"
+    },
+    {
+      "tick": 2980,
+      "enemy": "turret",
+      "y": 52,
+      "drop": "shield"
+    },
+    {
+      "tick": 3300,
+      "enemy": "zigzag_drone",
+      "y": 150,
+      "path": "zigzag",
+      "drop": "speed"
+    },
+    {
+      "tick": 3620,
+      "enemy": "shooter",
+      "y": 80,
+      "drop": "points"
+    },
+    {
+      "tick": 3940,
+      "enemy": "squadron",
+      "y": 148,
+      "path": "squadron_arc",
+      "count": 5,
+      "spacing": 16,
+      "drop": "bomb"
+    },
+    {
+      "tick": 4260,
+      "enemy": "kamikaze",
+      "y": 96,
+      "drop": null
+    },
+    {
+      "tick": 4580,
+      "enemy": "mine",
+      "y": 142,
+      "drop": "life"
+    },
+    {
+      "tick": 4900,
+      "enemy": "straight_drone",
+      "y": 126,
+      "drop": "points"
+    },
+    {
+      "tick": 5220,
+      "enemy": "turret",
+      "y": 178,
+      "drop": "shield"
+    },
+    {
+      "tick": 5540,
+      "enemy": "wave_drone",
+      "y": 90,
+      "path": "sine_wave",
+      "drop": "weapon"
+    },
+    {
+      "tick": 5860,
+      "enemy": "zigzag_drone",
+      "y": 110,
+      "path": "zigzag",
+      "drop": "speed"
+    },
+    {
+      "tick": 6180,
+      "enemy": "shooter",
+      "y": 190,
+      "drop": "missile"
+    },
+    {
+      "tick": 6500,
+      "enemy": "squadron",
+      "y": 125,
+      "path": "squadron_arc",
+      "count": 5,
+      "spacing": 14,
+      "drop": "bomb"
+    },
+    {
+      "tick": 6820,
+      "enemy": "kamikaze",
+      "y": 70,
+      "drop": null
+    },
+    {
+      "tick": 7140,
+      "enemy": "straight_drone",
+      "y": 180,
+      "drop": "points"
+    },
+    {
+      "tick": 7460,
+      "enemy": "wave_drone",
+      "y": 60,
+      "path": "sine_wave",
+      "drop": "shield"
+    }
+  ],
+  "boss": {
+    "tick": 7800,
+    "type": "ai_core"
+  },
+  "background": {
+    "layers": [
+      {
+        "asset": "core-backdrop",
+        "speed": 0.14
+      },
+      {
+        "asset": "core-far",
+        "speed": 0.32
+      },
+      {
+        "asset": "core-near",
+        "speed": 0.62
+      }
+    ]
+  },
+  "music": "world3-theme"
+}

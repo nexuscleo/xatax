@@ -1,11 +1,11 @@
-import type { CapsuleType, EnemyType } from '@vanguarda/content';
+import type { CapsuleType, EnemyType, PathId } from '@vanguarda/content';
 import { balance, paths } from '@vanguarda/content';
 import { checkCircleCollision, checkCircleTileCollision } from './collision';
 import type { Input } from './input';
 import { BUTTON_BOMB, BUTTON_FIRE } from './input';
 import type { BossEntity, EnemyEntity, World } from './world';
 
-export const CORE_VERSION = '0.2.0';
+export const CORE_VERSION = '0.5.0';
 export const STEP = 1 / 60;
 export { createWorld } from './world';
 
@@ -41,41 +41,41 @@ const COS_TABLE: number[] = [
   -799, -819, -839, -857, -875, -891, -906, -920, -934, -946, -956, -966, -975, -982, -988, -993,
   -997, -998, -999, -1000, -999, -998, -997, -993, -988, -982, -975, -966, -956, -946, -934, -920,
   -906, -891, -875, -857, -839, -819, -799, -777, -755, -731, -707, -682, -656, -629, -602, -574,
-  -545, -515, -485, -454, -423, -391, -358, -325, -292, -258, -224, -190, -156, -121, -87, -52,
-  -17, 17, 52, 87, 121, 156, 190, 224, 258, 292, 325, 358, 391, 423, 454, 485, 515, 545, 574, 602,
-  629, 656, 682, 707, 731, 755, 777, 799, 819, 839, 857, 875, 891, 906, 920, 934, 946, 956, 966,
-  975, 982, 988, 993, 997, 998, 999, 1000, 999, 998, 997, 993, 988, 982, 975, 966, 956, 946, 934,
-  920, 906, 891, 875, 857, 839, 819, 799, 777, 755, 731, 707, 682, 656, 629, 602, 574, 545, 515,
-  485, 454, 423, 391, 358, 325, 292, 258, 224, 190, 156, 121, 87, 52, 17, -17, -52, -87, -121,
-  -156, -190, -224, -258, -292, -325, -358, -391, -423, -454, -485, -515, -545, -574, -602, -629,
-  -656, -682, -707, -731, -755, -777, -799, -819, -839, -857, -875, -891, -906, -920, -934, -946,
-  -956, -966, -975, -982, -988, -993, -997, -998, -999,
+  -545, -515, -485, -454, -423, -391, -358, -325, -292, -258, -224, -190, -156, -121, -87, -52, -17,
+  17, 52, 87, 121, 156, 190, 224, 258, 292, 325, 358, 391, 423, 454, 485, 515, 545, 574, 602, 629,
+  656, 682, 707, 731, 755, 777, 799, 819, 839, 857, 875, 891, 906, 920, 934, 946, 956, 966, 975,
+  982, 988, 993, 997, 998, 999, 1000, 999, 998, 997, 993, 988, 982, 975, 966, 956, 946, 934, 920,
+  906, 891, 875, 857, 839, 819, 799, 777, 755, 731, 707, 682, 656, 629, 602, 574, 545, 515, 485,
+  454, 423, 391, 358, 325, 292, 258, 224, 190, 156, 121, 87, 52, 17, -17, -52, -87, -121, -156,
+  -190, -224, -258, -292, -325, -358, -391, -423, -454, -485, -515, -545, -574, -602, -629, -656,
+  -682, -707, -731, -755, -777, -799, -819, -839, -857, -875, -891, -906, -920, -934, -946, -956,
+  -966, -975, -982, -988, -993, -997, -998, -999,
 ];
 
 // Tabela de sin × 1000 para 360 ângulos (0°…359°)
 // sin(i) = cos(i - 90) → deslocamento de 90 entradas
 const SIN_TABLE: number[] = [
-  0, 17, 35, 52, 70, 87, 105, 122, 139, 156, 174, 191, 208, 225, 242, 259, 276, 292, 309, 326,
-  342, 358, 374, 390, 406, 422, 438, 454, 469, 485, 500, 515, 530, 545, 559, 574, 588, 602, 616,
-  629, 643, 656, 669, 682, 695, 707, 719, 731, 743, 755, 766, 777, 788, 799, 809, 819, 829, 839,
-  848, 857, 866, 875, 883, 891, 898, 906, 913, 920, 927, 933, 939, 945, 951, 956, 961, 966, 970,
-  975, 978, 982, 985, 988, 990, 993, 995, 997, 998, 999, 1000, 999, 999, 998, 997, 996, 995, 993,
-  991, 990, 988, 985, 982, 980, 978, 975, 971, 966, 961, 956, 951, 945, 940, 933, 927, 921, 914,
-  906, 899, 891, 883, 875, 866, 857, 848, 839, 829, 819, 809, 799, 788, 777, 766, 755, 743, 731,
-  719, 707, 695, 682, 669, 656, 643, 629, 616, 602, 588, 574, 559, 545, 530, 515, 500, 484, 469,
-  454, 438, 422, 406, 390, 374, 358, 342, 326, 309, 292, 276, 259, 242, 225, 208, 191, 174, 156,
-  139, 122, 105, 87, 70, 52, 35, 17, 0, -17, -35, -52, -70, -87, -105, -122, -139, -156, -174,
-  -191, -208, -225, -242, -259, -276, -292, -309, -326, -342, -358, -374, -390, -406, -422, -438,
-  -454, -469, -485, -500, -515, -530, -545, -559, -574, -588, -602, -616, -629, -643, -656, -669,
-  -682, -695, -707, -719, -731, -743, -755, -766, -777, -788, -799, -809, -819, -829, -839, -848,
-  -857, -866, -875, -883, -891, -898, -906, -913, -920, -927, -933, -939, -945, -951, -956, -961,
-  -966, -970, -975, -978, -982, -985, -988, -990, -993, -995, -997, -998, -999, -1000, -999, -999,
-  -998, -997, -996, -995, -993, -991, -990, -988, -985, -982, -980, -978, -975, -971, -966, -961,
-  -956, -951, -945, -940, -933, -927, -921, -914, -906, -899, -891, -883, -875, -866, -857, -848,
-  -839, -829, -819, -809, -799, -788, -777, -766, -755, -743, -731, -719, -707, -695, -682, -669,
-  -656, -643, -629, -616, -602, -588, -574, -559, -545, -530, -515, -500, -484, -469, -454, -438,
-  -422, -406, -390, -374, -358, -342, -326, -309, -292, -276, -259, -242, -225, -208, -191, -174,
-  -156, -139, -122, -105, -87, -70, -52, -35, -17,
+  0, 17, 35, 52, 70, 87, 105, 122, 139, 156, 174, 191, 208, 225, 242, 259, 276, 292, 309, 326, 342,
+  358, 374, 390, 406, 422, 438, 454, 469, 485, 500, 515, 530, 545, 559, 574, 588, 602, 616, 629,
+  643, 656, 669, 682, 695, 707, 719, 731, 743, 755, 766, 777, 788, 799, 809, 819, 829, 839, 848,
+  857, 866, 875, 883, 891, 898, 906, 913, 920, 927, 933, 939, 945, 951, 956, 961, 966, 970, 975,
+  978, 982, 985, 988, 990, 993, 995, 997, 998, 999, 1000, 999, 999, 998, 997, 996, 995, 993, 991,
+  990, 988, 985, 982, 980, 978, 975, 971, 966, 961, 956, 951, 945, 940, 933, 927, 921, 914, 906,
+  899, 891, 883, 875, 866, 857, 848, 839, 829, 819, 809, 799, 788, 777, 766, 755, 743, 731, 719,
+  707, 695, 682, 669, 656, 643, 629, 616, 602, 588, 574, 559, 545, 530, 515, 500, 484, 469, 454,
+  438, 422, 406, 390, 374, 358, 342, 326, 309, 292, 276, 259, 242, 225, 208, 191, 174, 156, 139,
+  122, 105, 87, 70, 52, 35, 17, 0, -17, -35, -52, -70, -87, -105, -122, -139, -156, -174, -191,
+  -208, -225, -242, -259, -276, -292, -309, -326, -342, -358, -374, -390, -406, -422, -438, -454,
+  -469, -485, -500, -515, -530, -545, -559, -574, -588, -602, -616, -629, -643, -656, -669, -682,
+  -695, -707, -719, -731, -743, -755, -766, -777, -788, -799, -809, -819, -829, -839, -848, -857,
+  -866, -875, -883, -891, -898, -906, -913, -920, -927, -933, -939, -945, -951, -956, -961, -966,
+  -970, -975, -978, -982, -985, -988, -990, -993, -995, -997, -998, -999, -1000, -999, -999, -998,
+  -997, -996, -995, -993, -991, -990, -988, -985, -982, -980, -978, -975, -971, -966, -961, -956,
+  -951, -945, -940, -933, -927, -921, -914, -906, -899, -891, -883, -875, -866, -857, -848, -839,
+  -829, -819, -809, -799, -788, -777, -766, -755, -743, -731, -719, -707, -695, -682, -669, -656,
+  -643, -629, -616, -602, -588, -574, -559, -545, -530, -515, -500, -484, -469, -454, -438, -422,
+  -406, -390, -374, -358, -342, -326, -309, -292, -276, -259, -242, -225, -208, -191, -174, -156,
+  -139, -122, -105, -87, -70, -52, -35, -17,
 ];
 
 /**
@@ -96,6 +96,10 @@ export function step(world: World, input: Input): void {
   const player = world.player;
 
   // 3. Atualização do jogador
+  const bombPressed = (input.buttons & BUTTON_BOMB) !== 0;
+  const bombWasPressed = (world.previousButtons & BUTTON_BOMB) !== 0;
+  world.previousButtons = input.buttons;
+
   player.prevX = player.x;
   player.prevY = player.y;
   player.ticksWithoutDamage++;
@@ -128,12 +132,12 @@ export function step(world: World, input: Input): void {
   }
 
   // Bomba
-  if ((input.buttons & BUTTON_BOMB) !== 0 && player.bombs > 0) {
+  if (bombPressed && !bombWasPressed && player.bombs > 0) {
     useBomb(world);
   }
 
   // 4. Rolagem e colisão com terreno
-  world.scrollX += balance.world.defaultScrollSpeed * STEP;
+  world.scrollX += world.levelData.scrollSpeed * STEP;
 
   checkPlayerTerrainCollision(world);
 
@@ -174,7 +178,11 @@ function firePlayerWeapon(world: World): void {
 
   // Cadência por nível
   const cadenceTicks =
-    wl >= 3 ? balance.weapons.level3CadenceTicks : balance.weapons.level2CadenceTicks;
+    wl === 1
+      ? balance.player.fireCadenceTicks
+      : wl === 2
+        ? balance.weapons.level2CadenceTicks
+        : balance.weapons.level3CadenceTicks;
   player.fireCooldown = cadenceTicks;
 
   const sx = player.x + 12;
@@ -244,7 +252,7 @@ function useBomb(world: World): void {
   for (let i = world.enemies.activeCount - 1; i >= 0; i--) {
     const enemy = world.enemies.items[i];
     if (!enemy) continue;
-    enemy.hp -= 3;
+    enemy.hp -= balance.player.bombEnemyDamage;
     if (enemy.hp <= 0) {
       killEnemy(world, i, enemy);
     } else {
@@ -254,7 +262,7 @@ function useBomb(world: World): void {
 
   // Dano no boss
   if (world.boss && !world.boss.isDead) {
-    world.boss.hp -= 5;
+    world.boss.hp -= balance.player.bombBossDamage;
     world.events.push({ type: 'bossHit', x: world.boss.x, y: world.boss.y });
     checkBossPhase(world, world.boss);
   }
@@ -287,7 +295,14 @@ function checkPlayerTerrainCollision(world: World): void {
         const tileLeft = c * tileSize;
         const tileTop = r * tileSize;
         if (
-          checkCircleTileCollision(worldPlayerX, player.y, player.radius, tileLeft, tileTop, tileSize)
+          checkCircleTileCollision(
+            worldPlayerX,
+            player.y,
+            player.radius,
+            tileLeft,
+            tileTop,
+            tileSize,
+          )
         ) {
           if (player.invincibleTicks === 0) {
             handlePlayerDamage(world);
@@ -300,99 +315,107 @@ function checkPlayerTerrainCollision(world: World): void {
 }
 
 // ---------------------------------------------------------------------------
-// Spawn de ondas (protótipo: ondas simples; integração com LevelData na Fase 4)
+// Spawn de ondas a partir do LevelData do mundo atual.
 // ---------------------------------------------------------------------------
 
 function spawnWaves(world: World): void {
-  // Protótipo: spawn de drones retos a cada 90 ticks para testar o loop
-  if (world.tick % 90 === 0 && world.enemies.activeCount < world.enemies.capacity) {
-    const enemy = world.enemies.acquire();
-    if (!enemy) return;
+  const waves = world.levelData.waves;
+  while (world.waveIndex < waves.length) {
+    const wave = waves[world.waveIndex]!;
+    if (wave.tick > world.tick) break;
+    const count = wave.count ?? 1;
+    if (world.enemies.activeCount + count > world.enemies.capacity) return;
+    world.waveIndex++;
 
-    const typeRoll = world.rng();
-    const yPos = 30 + Math.floor(world.rng() * (balance.world.logicalHeight - 60));
+    const spacing = wave.spacing ?? 0;
+    for (let i = 0; i < count; i++) {
+      const enemy = world.enemies.acquire();
+      if (!enemy) {
+        throw new Error('Enemy pool capacity changed while spawning a validated wave');
+      }
 
-    enemy.id = world.tick;
-    enemy.x = balance.world.logicalWidth + 20;
-    enemy.y = yPos;
-    enemy.spawnY = yPos;
-    enemy.prevX = enemy.x;
-    enemy.prevY = enemy.y;
-    enemy.pathTick = 0;
-    enemy.angleMilliRad = 3141; // ~180° → apontando para a esquerda
-    enemy.entryX = balance.enemy.shooter.entryDistance;
-    enemy.entryComplete = false;
-    enemy.dropCapsule = null;
-
-    if (typeRoll < 0.35) {
-      setupEnemyType(enemy, 'straight_drone');
-    } else if (typeRoll < 0.55) {
-      setupEnemyType(enemy, 'wave_drone');
-    } else if (typeRoll < 0.7) {
-      setupEnemyType(enemy, 'zigzag_drone');
-    } else if (typeRoll < 0.82) {
-      setupEnemyType(enemy, 'shooter');
-    } else if (typeRoll < 0.9) {
-      setupEnemyType(enemy, 'kamikaze');
-    } else {
-      setupEnemyType(enemy, 'mine');
+      enemy.id = world.tick + i;
+      enemy.x = balance.world.logicalWidth + 20 + i * spacing;
+      enemy.y = wave.y;
+      enemy.spawnY = wave.y;
+      enemy.prevX = enemy.x;
+      enemy.prevY = enemy.y;
+      enemy.pathTick = 0;
+      enemy.angleMilliRad = 3141;
+      enemy.entryX = balance.enemy.shooter.entryDistance;
+      enemy.entryComplete = false;
+      enemy.dropCapsule = wave.drop ?? null;
+      enemy.pathId = wave.path ?? defaultPathForEnemy(wave.enemy);
+      setupEnemyType(world, enemy, wave.enemy);
     }
+  }
 
-    // Spawn do boss no tick 2700
-    if (world.tick === 2700 && world.boss === null) {
-      spawnBoss(world);
-    }
+  if (world.tick >= world.levelData.boss.tick && world.boss === null) {
+    spawnBoss(world);
   }
 }
 
-function setupEnemyType(enemy: EnemyEntity, type: EnemyType): void {
+function defaultPathForEnemy(type: EnemyType): PathId {
+  switch (type) {
+    case 'wave_drone':
+      return 'sine_wave';
+    case 'zigzag_drone':
+      return 'zigzag';
+    case 'squadron':
+      return 'squadron_arc';
+    default:
+      return 'sine_wave';
+  }
+}
+
+function setupEnemyType(world: World, enemy: EnemyEntity, type: EnemyType): void {
   enemy.type = type;
   switch (type) {
     case 'straight_drone':
-      enemy.vx = -balance.enemy.straightDrone.speed;
+      enemy.vx = -scaledEnemySpeed(world, balance.enemy.straightDrone.speed);
       enemy.vy = 0;
       enemy.radius = balance.enemy.straightDrone.hitboxRadius;
-      enemy.hp = balance.enemy.straightDrone.hp;
+      enemy.hp = scaledEnemyHp(world, balance.enemy.straightDrone.hp);
       enemy.fireCooldown = balance.enemy.straightDrone.fireIntervalTicks;
       enemy.scoreValue = balance.enemy.straightDrone.scoreValue;
       break;
     case 'wave_drone':
-      enemy.vx = -balance.enemy.waveDrone.speed;
+      enemy.vx = -scaledEnemySpeed(world, balance.enemy.waveDrone.speed);
       enemy.vy = 0;
       enemy.radius = balance.enemy.waveDrone.hitboxRadius;
-      enemy.hp = balance.enemy.waveDrone.hp;
+      enemy.hp = scaledEnemyHp(world, balance.enemy.waveDrone.hp);
       enemy.fireCooldown = 0;
       enemy.scoreValue = balance.enemy.waveDrone.scoreValue;
       break;
     case 'zigzag_drone':
-      enemy.vx = -balance.enemy.zigzagDrone.speed;
+      enemy.vx = -scaledEnemySpeed(world, balance.enemy.zigzagDrone.speed);
       enemy.vy = 0;
       enemy.radius = balance.enemy.zigzagDrone.hitboxRadius;
-      enemy.hp = balance.enemy.zigzagDrone.hp;
+      enemy.hp = scaledEnemyHp(world, balance.enemy.zigzagDrone.hp);
       enemy.fireCooldown = 0;
       enemy.scoreValue = balance.enemy.zigzagDrone.scoreValue;
       break;
     case 'shooter':
-      enemy.vx = -balance.enemy.shooter.speed;
+      enemy.vx = -scaledEnemySpeed(world, balance.enemy.shooter.speed);
       enemy.vy = 0;
       enemy.radius = balance.enemy.shooter.hitboxRadius;
-      enemy.hp = balance.enemy.shooter.hp;
+      enemy.hp = scaledEnemyHp(world, balance.enemy.shooter.hp);
       enemy.fireCooldown = balance.enemy.shooter.fireIntervalTicks;
       enemy.scoreValue = balance.enemy.shooter.scoreValue;
       break;
     case 'kamikaze':
-      enemy.vx = -balance.enemy.kamikaze.speed;
+      enemy.vx = -scaledEnemySpeed(world, balance.enemy.kamikaze.speed);
       enemy.vy = 0;
       enemy.radius = balance.enemy.kamikaze.hitboxRadius;
-      enemy.hp = balance.enemy.kamikaze.hp;
+      enemy.hp = scaledEnemyHp(world, balance.enemy.kamikaze.hp);
       enemy.fireCooldown = 0;
       enemy.scoreValue = balance.enemy.kamikaze.scoreValue;
       break;
     case 'squadron':
-      enemy.vx = -balance.enemy.squadron.speed;
+      enemy.vx = -scaledEnemySpeed(world, balance.enemy.squadron.speed);
       enemy.vy = 0;
       enemy.radius = balance.enemy.squadron.hitboxRadius;
-      enemy.hp = balance.enemy.squadron.hp;
+      enemy.hp = scaledEnemyHp(world, balance.enemy.squadron.hp);
       enemy.fireCooldown = 0;
       enemy.scoreValue = balance.enemy.squadron.scoreValue;
       break;
@@ -400,7 +423,7 @@ function setupEnemyType(enemy: EnemyEntity, type: EnemyType): void {
       enemy.vx = 0;
       enemy.vy = 0;
       enemy.radius = balance.enemy.turret.hitboxRadius;
-      enemy.hp = balance.enemy.turret.hp;
+      enemy.hp = scaledEnemyHp(world, balance.enemy.turret.hp);
       enemy.fireCooldown = balance.enemy.turret.fireIntervalTicks;
       enemy.scoreValue = balance.enemy.turret.scoreValue;
       break;
@@ -408,11 +431,19 @@ function setupEnemyType(enemy: EnemyEntity, type: EnemyType): void {
       enemy.vx = 0;
       enemy.vy = 0;
       enemy.radius = balance.enemy.mine.hitboxRadius;
-      enemy.hp = balance.enemy.mine.hp;
+      enemy.hp = scaledEnemyHp(world, balance.enemy.mine.hp);
       enemy.fireCooldown = 0;
       enemy.scoreValue = balance.enemy.mine.scoreValue;
       break;
   }
+}
+
+function scaledEnemyHp(world: World, hp: number): number {
+  return Math.ceil(hp * balance.difficulty[world.difficulty].enemyHpMultiplier);
+}
+
+function scaledEnemySpeed(world: World, speed: number): number {
+  return speed * balance.difficulty[world.difficulty].enemySpeedMultiplier;
 }
 
 // ---------------------------------------------------------------------------
@@ -430,7 +461,7 @@ function updateEnemies(world: World): void {
 
     switch (enemy.type) {
       case 'straight_drone':
-        updateStraightDrone(world, enemy, i);
+        updateStraightDrone(world, enemy);
         break;
       case 'wave_drone':
         updateWaveDrone(world, enemy);
@@ -439,7 +470,7 @@ function updateEnemies(world: World): void {
         updateZigzagDrone(world, enemy);
         break;
       case 'shooter':
-        updateShooter(world, enemy, i);
+        updateShooter(world, enemy);
         break;
       case 'kamikaze':
         updateKamikaze(world, enemy);
@@ -448,22 +479,21 @@ function updateEnemies(world: World): void {
         updateSquadron(world, enemy);
         break;
       case 'turret':
-        updateTurret(world, enemy, i);
+        updateTurret(world, enemy);
         break;
       case 'mine':
         updateMine(world, enemy);
         break;
     }
 
-    // Remove inimigos fora da tela (exceto turret e mine que são estáticos)
-    if (enemy.type !== 'turret' && enemy.type !== 'mine' && enemy.x < -30) {
+    if (enemy.x < -enemy.radius - balance.world.offscreenMargin) {
       world.enemies.swapRemove(i);
     }
   }
 }
 
 // Drone reto: avança em linha reta e atira
-function updateStraightDrone(world: World, enemy: EnemyEntity, idx: number): void {
+function updateStraightDrone(world: World, enemy: EnemyEntity): void {
   enemy.x += enemy.vx * STEP;
 
   if (enemy.fireCooldown > 0) {
@@ -472,17 +502,16 @@ function updateStraightDrone(world: World, enemy: EnemyEntity, idx: number): voi
     spawnEnemyShot(world, enemy.x - 8, enemy.y, -balance.enemy.straightDrone.shotSpeed, 0);
     enemy.fireCooldown = balance.enemy.straightDrone.fireIntervalTicks;
   }
-
-  if (enemy.x < -30) {
-    world.enemies.swapRemove(idx);
-  }
 }
 
 // Drone ondulatório: trajetória Y a partir da tabela sine_wave
 function updateWaveDrone(_world: World, enemy: EnemyEntity): void {
   enemy.x += enemy.vx * STEP;
-  const ptIdx = enemy.pathTick % paths.sine_wave.length;
-  const yOffset = (paths.sine_wave[ptIdx]! * balance.enemy.waveDrone.pathAmplitude) / 32;
+  const trajectory = paths[enemy.pathId];
+  const ptIdx = enemy.pathTick % trajectory.length;
+  const yOffset =
+    (trajectory[ptIdx]! * balance.enemy.waveDrone.pathAmplitude) /
+    balance.enemy.waveDrone.pathValueScale;
   enemy.y = enemy.spawnY + yOffset;
   // Clamp dentro da tela
   if (enemy.y < 10) enemy.y = 10;
@@ -492,23 +521,18 @@ function updateWaveDrone(_world: World, enemy: EnemyEntity): void {
 // Drone zigue-zague: inverte direção Y a cada stepTicks
 function updateZigzagDrone(_world: World, enemy: EnemyEntity): void {
   enemy.x += enemy.vx * STEP;
-  const stepTicks = balance.enemy.zigzagDrone.stepTicks;
-  const phase = Math.floor(enemy.pathTick / stepTicks) % 2;
+  const trajectory = paths[enemy.pathId];
+  const ptIdx = enemy.pathTick % trajectory.length;
   const stepSize = balance.enemy.zigzagDrone.stepSize;
-  const targetY = phase === 0 ? enemy.spawnY - stepSize : enemy.spawnY + stepSize;
-  // Move suavemente até o alvo a 80px/s
-  const dy = targetY - enemy.y;
-  const moveSpeed = 80 * STEP;
-  if (dy > moveSpeed) enemy.y += moveSpeed;
-  else if (dy < -moveSpeed) enemy.y -= moveSpeed;
-  else enemy.y = targetY;
+  enemy.y =
+    enemy.spawnY + (trajectory[ptIdx]! * stepSize) / balance.enemy.zigzagDrone.pathValueScale;
   // Clamp
   if (enemy.y < 10) enemy.y = 10;
   if (enemy.y > balance.world.logicalHeight - 10) enemy.y = balance.world.logicalHeight - 10;
 }
 
 // Atirador: avança até entryX, para e atira em direção à nave
-function updateShooter(world: World, enemy: EnemyEntity, idx: number): void {
+function updateShooter(world: World, enemy: EnemyEntity): void {
   if (!enemy.entryComplete) {
     enemy.x += enemy.vx * STEP;
     if (enemy.x <= enemy.entryX) {
@@ -543,9 +567,6 @@ function updateShooter(world: World, enemy: EnemyEntity, idx: number): void {
   if (enemy.entryComplete && enemy.pathTick > 300) {
     enemy.vx = -balance.enemy.shooter.speed;
     enemy.entryComplete = false;
-  }
-  if (enemy.x < -30) {
-    world.enemies.swapRemove(idx);
   }
 }
 
@@ -600,7 +621,7 @@ function updateKamikaze(world: World, enemy: EnemyEntity): void {
 
   // Move na direção do ângulo atual
   const cs = cosSin1000(enemy.angleMilliRad);
-  const spd = balance.enemy.kamikaze.speed * STEP;
+  const spd = scaledEnemySpeed(world, balance.enemy.kamikaze.speed) * STEP;
   enemy.x += (cs.c * spd) / 1000;
   enemy.y += (cs.s * spd) / 1000;
 }
@@ -608,15 +629,19 @@ function updateKamikaze(world: World, enemy: EnemyEntity): void {
 // Esquadrão: trajetória em arco usando paths.squadron_arc
 function updateSquadron(_world: World, enemy: EnemyEntity): void {
   enemy.x += enemy.vx * STEP;
-  const ptIdx = enemy.pathTick % paths.squadron_arc.length;
-  const yOffset = (paths.squadron_arc[ptIdx]! * 40) / 32;
+  const trajectory = paths[enemy.pathId];
+  const ptIdx = enemy.pathTick % trajectory.length;
+  const yOffset =
+    (trajectory[ptIdx]! * balance.enemy.squadron.pathAmplitude) /
+    balance.enemy.squadron.pathValueScale;
   enemy.y = enemy.spawnY + yOffset;
   if (enemy.y < 10) enemy.y = 10;
   if (enemy.y > balance.world.logicalHeight - 10) enemy.y = balance.world.logicalHeight - 10;
 }
 
 // Torreta: estática, mira e atira
-function updateTurret(world: World, enemy: EnemyEntity, idx: number): void {
+function updateTurret(world: World, enemy: EnemyEntity): void {
+  enemy.x -= world.levelData.scrollSpeed * STEP;
   if (enemy.fireCooldown > 0) {
     enemy.fireCooldown--;
   } else {
@@ -632,32 +657,42 @@ function updateTurret(world: World, enemy: EnemyEntity, idx: number): void {
     }
     enemy.fireCooldown = balance.enemy.turret.fireIntervalTicks;
   }
-  // Turretas são removidas quando saem da tela pelo scroll
-  if (enemy.x + world.scrollX < -30) {
-    world.enemies.swapRemove(idx);
-  }
 }
 
 // Mina: parada, explode em fragmentos radiais ao morrer (handled in killEnemy)
-function updateMine(_world: World, _enemy: EnemyEntity): void {
-  // Minas são estáticas; deriva lenta com o scroll
-  // Não faz nada no update — explosão é tratada em killEnemy
+function updateMine(world: World, enemy: EnemyEntity): void {
+  enemy.x -= world.levelData.scrollSpeed * STEP;
 }
 
 // ---------------------------------------------------------------------------
 // Boss: dockyard_guardian
 // ---------------------------------------------------------------------------
 
+function getBossConfig(world: World) {
+  switch (world.levelData.boss.type) {
+    case 'reactor_sentinel':
+      return balance.boss.reactorSentinel;
+    case 'ai_core':
+      return balance.boss.aiCore;
+    case 'dockyard_guardian':
+    default:
+      return balance.boss.dockyardGuardian;
+  }
+}
+
 function spawnBoss(world: World): void {
-  const cfg = balance.boss.dockyardGuardian;
+  const cfg = getBossConfig(world);
+  const hpMultiplier = balance.difficulty[world.difficulty].enemyHpMultiplier;
+  const hp = Math.ceil(cfg.hp * hpMultiplier);
+  const spawnX = balance.world.logicalWidth - cfg.spawnInset;
   world.boss = {
-    x: balance.world.logicalWidth - 40,
+    x: spawnX,
     y: balance.world.logicalHeight / 2,
-    prevX: balance.world.logicalWidth - 40,
+    prevX: spawnX,
     prevY: balance.world.logicalHeight / 2,
     radius: cfg.hitboxRadius,
-    hp: cfg.hp,
-    maxHp: cfg.hp,
+    hp,
+    maxHp: hp,
     phase: 1,
     attackTick: 0,
     scoreValue: cfg.scoreValue,
@@ -670,18 +705,26 @@ function updateBoss(world: World, boss: BossEntity): void {
   boss.prevY = boss.y;
   boss.attackTick++;
 
-  const cfg = balance.boss.dockyardGuardian;
+  const cfg = getBossConfig(world);
   const fireInterval =
-    boss.phase === 1 ? cfg.phase1FireIntervalTicks : cfg.phase2FireIntervalTicks;
-  const shotSpeed = boss.phase === 1 ? cfg.phase1ShotSpeed : cfg.phase2ShotSpeed;
+    boss.phase === 1
+      ? cfg.phase1FireIntervalTicks
+      : boss.phase === 2
+        ? cfg.phase2FireIntervalTicks
+        : cfg.phase3FireIntervalTicks ?? cfg.phase2FireIntervalTicks;
+  const shotSpeed =
+    boss.phase === 1
+      ? cfg.phase1ShotSpeed
+      : boss.phase === 2
+        ? cfg.phase2ShotSpeed
+        : cfg.phase3ShotSpeed ?? cfg.phase2ShotSpeed;
 
   if (boss.attackTick >= fireInterval) {
     boss.attackTick = 0;
     if (boss.phase === 1) {
-      // Fase 1: spread em leque de 5 tiros
-      const spreadAngles = [-1256, -628, 0, 628, 1256]; // milirad (-72°, -36°, 0°, 36°, 72°) relativo a 180°
+      const spreadAngles = cfg.phase1SpreadMilliRadians;
       for (let k = 0; k < spreadAngles.length; k++) {
-        const aMRad = (3141 + (spreadAngles[k] ?? 0) + 6283) % 6283;
+        const aMRad = (3141 + spreadAngles[k]! + 6283) % 6283;
         const cs = cosSin1000(aMRad);
         spawnEnemyShot(
           world,
@@ -691,38 +734,56 @@ function updateBoss(world: World, boss: BossEntity): void {
           (cs.s * shotSpeed) / 1000,
         );
       }
-    } else {
-      // Fase 2: radial de 8 tiros
-      for (let k = 0; k < 8; k++) {
-        const aMRad = (k * 6283) / 8;
+    } else if (boss.phase === 2) {
+      const count = cfg.phase2ProjectileCount;
+      for (let k = 0; k < count; k++) {
+        const aMRad = (k * 6283) / count;
         const cs = cosSin1000(Math.round(aMRad));
-        spawnEnemyShot(
-          world,
-          boss.x,
-          boss.y,
-          (cs.c * shotSpeed) / 1000,
-          (cs.s * shotSpeed) / 1000,
-        );
+        spawnEnemyShot(world, boss.x, boss.y, (cs.c * shotSpeed) / 1000, (cs.s * shotSpeed) / 1000);
+      }
+    } else {
+      const count = cfg.phase3ProjectileCount ?? cfg.phase2ProjectileCount;
+      for (let k = 0; k < count; k++) {
+        const offset = (k % 2 === 0 ? 1 : -1) * 314;
+        const aMRad = (((k * 6283) / count) + offset + 6283) % 6283;
+        const cs = cosSin1000(aMRad);
+        spawnEnemyShot(world, boss.x - 12, boss.y, (cs.c * shotSpeed) / 1000, (cs.s * shotSpeed) / 1000);
       }
     }
   }
 
-  // Movimentação senoidal vertical do boss usando tabela
   const pIdx = (world.tick * 2) % paths.sine_wave.length;
-  boss.y = balance.world.logicalHeight / 2 + (paths.sine_wave[pIdx]! * 60) / 32;
+  boss.y =
+    balance.world.logicalHeight / 2 +
+    (paths.sine_wave[pIdx]! * cfg.movementAmplitude) / cfg.movementPathScale;
 }
 
 function checkBossPhase(world: World, boss: BossEntity): void {
-  if (boss.phase === 1 && boss.hp <= balance.boss.dockyardGuardian.phase2HpThreshold) {
+  const cfg = getBossConfig(world);
+  const phase2Threshold = Math.ceil(
+    cfg.phase2HpThreshold * balance.difficulty[world.difficulty].enemyHpMultiplier,
+  );
+  const phase3Threshold = cfg.phase3HpThreshold
+    ? Math.ceil(cfg.phase3HpThreshold * balance.difficulty[world.difficulty].enemyHpMultiplier)
+    : undefined;
+
+  if (boss.phase === 1 && boss.hp <= phase2Threshold) {
     boss.phase = 2;
     boss.attackTick = 0;
+  } else if (boss.phase === 2 && phase3Threshold !== undefined && boss.hp <= phase3Threshold) {
+    boss.phase = 3;
+    boss.attackTick = 0;
   }
+
   if (boss.hp <= 0) {
     boss.isDead = true;
     world.events.push({ type: 'explosion', x: boss.x, y: boss.y });
     spawnExplosionParticles(world, boss.x, boss.y, 20, '#ff6600');
     spawnExplosionParticles(world, boss.x, boss.y, 15, '#ffdd44');
-    world.score += boss.scoreValue;
+    world.score += boss.scoreValue + balance.scoring.worldCompleteBonus;
+    if (!world.player.hasTakenDamage) {
+      world.score += balance.scoring.noDamageBonus;
+    }
     world.boss = null;
     world.state = 'worldClear';
     world.events.push({ type: 'worldClear' });
@@ -852,7 +913,14 @@ function updateCapsules(world: World): void {
     // Colisão com o jogador
     if (
       !player.isDead &&
-      checkCircleCollision(player.x, player.y, player.radius + 5, cap.x, cap.y, cap.radius)
+      checkCircleCollision(
+        player.x,
+        player.y,
+        player.radius + balance.capsule.pickupRadiusBonus,
+        cap.x,
+        cap.y,
+        cap.radius,
+      )
     ) {
       applyCapsule(world, cap.capsuleType);
       world.capsules.swapRemove(i);
@@ -860,7 +928,7 @@ function updateCapsules(world: World): void {
     }
 
     // Remove se saiu da tela
-    if (cap.x < -20) {
+    if (cap.x < -balance.world.offscreenMargin) {
       world.capsules.swapRemove(i);
     }
   }
@@ -879,11 +947,13 @@ function spawnCapsule(world: World, x: number, y: number, type: CapsuleType): vo
 
 function applyCapsule(world: World, type: CapsuleType): void {
   const player = world.player;
+  world.capsulesCollected++;
+  world.score += balance.scoring.capsuleBonus;
   world.events.push({ type: 'powerup', x: player.x, y: player.y });
 
   switch (type) {
     case 'weapon':
-      if (player.weaponLevel < 3) {
+      if (player.weaponLevel < balance.player.maxWeaponLevel) {
         player.weaponLevel++;
       }
       break;
@@ -891,19 +961,18 @@ function applyCapsule(world: World, type: CapsuleType): void {
       player.hasMissile = true;
       break;
     case 'shield':
-      if (player.shield < 1) {
-        player.shield = 1;
+      if (player.shield < balance.player.maxShields) {
+        player.shield = balance.player.maxShields;
       }
       break;
     case 'speed':
       if (player.speedStackCount < balance.player.maxSpeedStacks) {
         player.speedStackCount++;
-        player.speedMultiplier =
-          1.0 + player.speedStackCount * balance.player.speedBonusPerStack;
+        player.speedMultiplier = 1.0 + player.speedStackCount * balance.player.speedBonusPerStack;
       }
       break;
     case 'bomb':
-      if (player.bombs < 3) {
+      if (player.bombs < balance.player.maxBombs) {
         player.bombs++;
       }
       break;
@@ -938,7 +1007,8 @@ function updateParticles(world: World): void {
 // ---------------------------------------------------------------------------
 
 function killEnemy(world: World, idx: number, enemy: EnemyEntity): void {
-  world.score += enemy.scoreValue * (1 + Math.floor(world.combo / balance.scoring.comboMultiplierInterval));
+  world.score +=
+    enemy.scoreValue * (1 + Math.floor(world.combo / balance.scoring.comboMultiplierInterval));
   world.combo++;
   world.events.push({ type: 'explosion', x: enemy.x, y: enemy.y });
   spawnExplosionParticles(world, enemy.x, enemy.y, 10, '#ff6600');
@@ -950,13 +1020,7 @@ function killEnemy(world: World, idx: number, enemy: EnemyEntity): void {
     for (let k = 0; k < cnt; k++) {
       const aMRad = Math.round((k * 6283) / cnt);
       const cs = cosSin1000(aMRad);
-      spawnEnemyShot(
-        world,
-        enemy.x,
-        enemy.y,
-        (cs.c * spd) / 1000,
-        (cs.s * spd) / 1000,
-      );
+      spawnEnemyShot(world, enemy.x, enemy.y, (cs.c * spd) / 1000, (cs.s * spd) / 1000);
     }
   }
 
@@ -971,13 +1035,14 @@ function killEnemy(world: World, idx: number, enemy: EnemyEntity): void {
 function handlePlayerDamage(world: World): void {
   const player = world.player;
   world.combo = 0;
+  player.hasTakenDamage = true;
   player.ticksWithoutDamage = 0;
   world.events.push({ type: 'playerHit', x: player.x, y: player.y });
   spawnExplosionParticles(world, player.x, player.y, 12, '#ff3333');
 
   if (player.shield > 0) {
     player.shield = 0;
-    player.invincibleTicks = 60; // 1s de graça após perder escudo
+    player.invincibleTicks = balance.player.shieldHitInvincibilityTicks;
     return;
   }
 
@@ -991,21 +1056,16 @@ function handlePlayerDamage(world: World): void {
   }
 }
 
-function spawnEnemyShot(
-  world: World,
-  x: number,
-  y: number,
-  vx: number,
-  vy: number,
-): void {
+function spawnEnemyShot(world: World, x: number, y: number, vx: number, vy: number): void {
   const shot = world.enemyShots.acquire();
   if (!shot) return;
   shot.x = x;
   shot.y = y;
   shot.prevX = x;
   shot.prevY = y;
-  shot.vx = vx;
-  shot.vy = vy;
+  const speedMultiplier = balance.difficulty[world.difficulty].enemyShotSpeedMultiplier;
+  shot.vx = vx * speedMultiplier;
+  shot.vy = vy * speedMultiplier;
   shot.radius = balance.enemy.straightDrone.shotHitboxRadius;
   shot.damage = 1;
   shot.isPlayer = false;
@@ -1035,8 +1095,10 @@ function spawnExplosionParticles(
   }
 }
 
-function checkExtraLife(_world: World): void {
-  // A cada balance.player.extraLifeScoreInterval pontos, o jogador ganha uma vida extra.
-  // A implementação completa requer um contador separado de "últimos pontos na vidas extra",
-  // que será adicionado ao estado do mundo na próxima iteração para evitar alocação aqui.
+function checkExtraLife(world: World): void {
+  while (world.score >= world.nextExtraLifeScore) {
+    world.player.lives++;
+    world.nextExtraLifeScore += balance.player.extraLifeScoreInterval;
+    world.events.push({ type: 'extraLife', x: world.player.x, y: world.player.y });
+  }
 }

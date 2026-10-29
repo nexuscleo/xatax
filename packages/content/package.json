@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "generate-paths": "node scripts/generate-paths.js"
+    "generate-paths": "node scripts/generate-paths.js && pnpm exec prettier --write src/paths.json"
   },
   "dependencies": {
     "zod": "^3.24.2"

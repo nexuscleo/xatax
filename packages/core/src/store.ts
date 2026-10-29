@@ -10,6 +10,7 @@ export interface UiSnapshot {
   bombs: number;
   combo: number;
   bossHp: number | null;
+  bossMaxHp: number | null;
   state: GameUiState;
 }
 
@@ -32,6 +33,7 @@ export class UiStore {
       bombs: 1,
       combo: 0,
       bossHp: null,
+      bossMaxHp: null,
       state: initialState,
     };
   }
@@ -48,7 +50,14 @@ export class UiStore {
   };
 
   update(world: World, uiState?: GameUiState): void {
-    const nextState = uiState ?? (world.state === 'gameover' ? 'gameover' : 'playing');
+    const nextState =
+      world.state === 'gameover'
+        ? 'gameover'
+        : world.state === 'worldClear'
+          ? 'worldClear'
+          : (uiState ?? 'playing');
+    const bossHp = world.boss?.hp ?? null;
+    const bossMaxHp = world.boss?.maxHp ?? null;
 
     // Only notify if values actually changed
     if (
@@ -58,6 +67,8 @@ export class UiStore {
       this.snapshot.shield === world.player.shield &&
       this.snapshot.bombs === world.player.bombs &&
       this.snapshot.combo === world.combo &&
+      this.snapshot.bossHp === bossHp &&
+      this.snapshot.bossMaxHp === bossMaxHp &&
       this.snapshot.state === nextState
     ) {
       return;
@@ -70,7 +81,8 @@ export class UiStore {
       shield: world.player.shield,
       bombs: world.player.bombs,
       combo: world.combo,
-      bossHp: null,
+      bossHp,
+      bossMaxHp,
       state: nextState,
     };
 
